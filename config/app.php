@@ -27,6 +27,8 @@ return [
     */
 
     'env' => env('APP_ENV', 'production'),
+    'barcode_key' => env('BARCODE_KEY'),
+    'barcode_iv'  => env('BARCODE_IV'),
 
     /*
     |--------------------------------------------------------------------------
