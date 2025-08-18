@@ -12,7 +12,7 @@ class BarcodeController extends Controller
     {
         // 1) Dekripsi untuk dapatkan id_ds
         $idDs = AesHelper::paramDecrypt($encrypted);
-
+        
         // 2) Query Builder: join tiga tabel sekaligus
         $data = DB::table('pro_po_ds as pod')
             ->leftJoin('pro_po_ds_detail as d', 'pod.id_ds', '=', 'd.id_ds')
@@ -35,7 +35,7 @@ class BarcodeController extends Controller
                 'pd.no_spj',
 
             ])
-            ->where('pod.id_ds', $idDs)
+            ->where('d.id_dsd', $idDs)
             // kalau ada beberapa detail, ambil yang pertama saja:
             ->first();
 
@@ -88,5 +88,67 @@ class BarcodeController extends Controller
 
         // 3) Kirim object $data ke view
         return view('barcode.po.show', compact('po'));
+    }
+
+    public function showPenawaran(string $encrypted)
+    {
+
+        $idPen = AesHelper::paramDecrypt($encrypted);
+        $ids= explode(",",$idPen);
+        
+        session()->flash('status', $encrypted);
+        // // Dekripsi untuk dapatkan id_po_supplier
+
+        // Query data PO Supplier
+        $data = DB::table('pro_penawaran as a')
+            ->join('pro_customer as b', 'a.id_customer', '=', 'b.id_customer')
+            ->join('acl_user as c', 'b.id_marketing', '=', 'c.id_user')
+            ->join('pro_master_cabang as d', 'a.id_cabang', '=', 'd.id_master')
+            ->join('pro_master_produk as e', 'a.produk_tawar', '=', 'e.id_master')
+            ->join('pro_master_provinsi as f', 'b.prov_customer', '=', 'f.id_prov')
+            ->join('pro_master_kabupaten as g', 'b.kab_customer', '=', 'g.id_kab')
+            ->leftJoin('acl_user as h', 'a.pic_approval', '=', 'h.id_user')
+            ->leftJoin('acl_role as i', 'h.id_role', '=', 'i.id_role')
+            ->select([
+            'a.*',
+			'b.nama_customer',
+			'b.alamat_customer',
+			'b.telp_customer',
+			'b.fax_customer',
+			'c.fullname',
+			'c.mobile_user',
+			'c.email_user',
+			'd.nama_cabang',
+			'e.jenis_produk',
+			'e.merk_dagang',
+			'f.nama_prov',
+			'g.nama_kab',
+			'h.fullname as picname',
+			'i.role_name',
+			'd.kode_barcode',
+
+            ])
+            ->where([['a.id_customer', $ids[0]],['a.id_penawaran', $ids[1]]])
+            ->first();
+        
+        $jenis_net	= $data->jenis_net;
+        $rincian = json_decode($data->detail_rincian, true);
+        $arrKondInd	= array(0 => '', 1 => "Setelah Invoice diterima", "Setelah pengiriman", "Setelah Loading");
+        $arrPayment = array("CREDIT" => "CREDIT " . $data->jangka_waktu . " Hari " . $arrKondInd[$jenis_net], "CBD" => "CBD (Cash Before Delivery)", "COD" => "COD (Cash On Delivery)");
+        $rincian = json_decode($data->detail_rincian, true);
+        if ($data->perhitungan == 1) {
+            $breakdown = false;
+            foreach ($rincian as $temp) {
+                $breakdown = $breakdown || $temp["rinci"];
+            }
+        }
+        if (!$data) {
+            abort(404, 'Data PO Supplier tidak ditemukan');
+        }
+
+
+
+        // 3) Kirim object $data ke view
+        return view('barcode.show_penawaran', compact('data','arrPayment','breakdown','rincian'));
     }
 }
