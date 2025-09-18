@@ -159,7 +159,7 @@
                                 <tr>
                                     <td class=" text-right ">7. </td>
                                     <td class="pl-5">Masa Berlaku Harga</td>
-                                    <td>: Sampai dengan <strong>  {{ \Carbon\Carbon::parse($data->masa_awal)->format('d-m-Y') . " s/d " . \Carbon\Carbon::parse($data->masa_akhir)->format('d-m-Y')}}</div></strong></td>
+                                    <td>: <strong>  {{ \Carbon\Carbon::parse($data->masa_awal)->format('d-m-Y') . " s/d " . \Carbon\Carbon::parse($data->masa_akhir)->format('d-m-Y')}}</div></strong></td>
                                 </tr>
                                 <tr>
                                     <td class="text-right">8. </td>

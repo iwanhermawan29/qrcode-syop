@@ -96,7 +96,7 @@ class BarcodeController extends Controller
         $idPen = AesHelper::paramDecrypt($encrypted);
         $ids= explode(",",$idPen);
         
-        session()->flash('status', $encrypted);
+        session()->flash('status',  'Data verified');
         // // Dekripsi untuk dapatkan id_po_supplier
 
         // Query data PO Supplier
@@ -146,9 +146,78 @@ class BarcodeController extends Controller
             abort(404, 'Data PO Supplier tidak ditemukan');
         }
 
-
-
         // 3) Kirim object $data ke view
         return view('barcode.show_penawaran', compact('data','arrPayment','breakdown','rincian'));
+    }
+
+    public function showSuratJalan(string $encrypted)
+    {
+
+        $idpo = AesHelper::paramDecrypt($encrypted);
+
+        session()->flash('status',  'Data verified');
+        // Dekripsi untuk dapatkan id_pod
+
+        // Query data PO Supplier
+        $data = DB::table('pro_po_detail as a')
+        ->join('pro_po as b', 'a.id_po', '=', 'b.id_po')
+        ->join('pro_pr_detail as c', 'a.id_prd', '=', 'c.id_prd')
+        ->join('pro_po_customer_plan as d', 'a.id_plan', '=', 'd.id_plan')
+        ->join('pro_customer_lcr as e', 'd.id_lcr', '=', 'e.id_lcr')
+        ->join('pro_master_provinsi as f', 'e.prov_survey', '=', 'f.id_prov')
+        ->join('pro_master_kabupaten as g', 'e.kab_survey', '=', 'g.id_kab')
+        ->join('pro_po_customer as h', 'd.id_poc', '=', 'h.id_poc')
+        ->join('pro_customer as i', 'h.id_customer', '=', 'i.id_customer')
+        ->join('acl_user as j', 'i.id_marketing', '=', 'j.id_user')
+        ->join('pro_master_transportir as k', 'b.id_transportir', '=', 'k.id_master')
+        ->join('pro_master_transportir_mobil as l', 'a.mobil_po', '=', 'l.id_master')
+        ->join('pro_master_transportir_sopir as m', 'a.sopir_po', '=', 'm.id_master')
+        ->join('pro_master_terminal as n', 'a.terminal_po', '=', 'n.id_master')
+        ->join('pro_master_cabang as o', 'b.id_wilayah', '=', 'o.id_master')
+        ->leftJoin('pro_po_ds_detail as p', 'a.id_pod', '=', 'p.id_pod')
+        ->select([
+            'a.*',
+            'b.nomor_po', 
+            'b.tanggal_po', 
+            'k.nama_suplier', 
+            'k.att_suplier', 
+            'k.fax_suplier', 
+            'k.telp_suplier', 
+            'l.nomor_plat', 
+            'm.nama_sopir', 
+            'n.nama_terminal', 
+            'c.is_approved', 
+            'c.nomor_lo_pr', 
+            'h.nomor_poc', 
+            'i.nama_customer', 
+            'j.fullname', 
+            'e.alamat_survey', 
+            'e.picustomer', 
+            'c.no_do_acurate',
+            'f.nama_prov', 
+            'g.nama_kab', 
+            'o.nama_cabang', 
+            'c.produk', 
+            'b.created_by', 
+            'b.tgl_approved',
+            'p.is_cancel', 
+            'o.kode_barcode',
+            'd.status_jadwal',
+            'd.tanggal_kirim'
+        ])
+        ->where('a.id_pod', $idpo)
+        ->where('a.pod_approved', 1)
+        ->where(function($query) {
+            $query->whereNotNull('p.is_cancel')
+                ->orWhere('p.is_cancel', 0);
+        })
+        ->orderBy('a.no_urut_po')
+        ->first();
+
+        if (!$data) {
+            abort(404, 'Data Surat Jalan tidak ditemukan');
+        }
+
+        return view('barcode.show_spj', compact('data'));
     }
 }

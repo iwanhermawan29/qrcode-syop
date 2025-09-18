@@ -16,3 +16,6 @@ Route::get('customer/barcode/po/{encrypted}', [BarcodeController::class, 'showPo
 
 Route::get('customer/barcode/penawaran/{encrypted}', [BarcodeController::class, 'showPenawaran'])
     ->name('customer.barcode.show_penawaran');
+
+Route::get('customer/barcode/surat-jalan/{encrypted}', [BarcodeController::class, 'showSuratJalan'])
+    ->name('customer.barcode.show_spj');
